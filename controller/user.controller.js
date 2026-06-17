@@ -1,6 +1,7 @@
 import { userSchema } from "../schemas/user.schema.js";
 import { errorResponse, successResponse } from "../utils/response.js";
 import { User } from "../models/user.model.js";
+import { Post } from "../models/post.model.js";
 
 export const getAllUsers = async (req, res, next) => {
   try {
@@ -77,4 +78,21 @@ export const updateUser = async (req, res, next) => {
     return errorResponse(res, 400, "User failed to get Updated ");
   }
   return successResponse(res, 200, updatedUser);
+};
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return errorResponse(res, 400, "User does not exist");
+    }
+
+    await Post.deleteMany({ userId: req.params.id });
+
+    await User.findByIdAndDelete(req.params.id);
+
+    return res.status(204).send();
+  } catch (error) {
+    return errorResponse(res, 400, "Could not delete User ");
+  }
 };

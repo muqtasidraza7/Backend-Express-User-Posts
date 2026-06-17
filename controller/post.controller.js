@@ -1,6 +1,7 @@
 import { postSchema } from "../schemas/post.schema.js";
 import { Post } from "../models/post.model.js";
 import { errorResponse, successResponse } from "../utils/response.js";
+import { User } from "../models/user.model.js";
 
 export const getPosts = async (req, res, next) => {
   try {
@@ -39,5 +40,32 @@ export const createPosts = async (req, res, next) => {
     return successResponse(res, 201, newPost);
   } catch (error) {
     return errorResponse(res, 500, "Post has not been created");
+  }
+};
+
+export const getPostsByUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    const posts = await Post.find({ userId: req.params.id }).populate(
+      "userId",
+      "name email",
+    );
+
+    return successResponse(res, 200, {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      totalPosts: posts.length,
+      posts,
+    });
+  } catch (error) {
+    return errorResponse(res, 500, error?.message || "Could not fetch posts");
   }
 };
