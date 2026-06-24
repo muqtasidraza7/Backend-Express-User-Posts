@@ -9,7 +9,7 @@ export const getPosts = async (req, res, next) => {
     const limit = req.query.limit || 10;
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find().skip().limit();
+    const posts = await Post.find().skip(skip).limit(limit);
     const totalPosts = await Post.countDocuments();
     if (!posts) {
       return errorResponse(res, 400, "Could not find any Posts");
@@ -24,8 +24,8 @@ export const getPosts = async (req, res, next) => {
       },
     });
   } catch (error) {
-    return errorResponse(res, 500, "Unable to find users");
     console.log(error);
+    return errorResponse(res, 500, "Unable to find users");
   }
 };
 

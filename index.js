@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./db/connect.js";
 import userRouter from "./routes/user.route.js";
 import postRouter from "./routes/post.route.js";
+import authRouter from "./routes/auth.route.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(userRouter);
 app.use(postRouter);
+app.use(authRouter)
 
 const startServer = async () => {
   await connectDB();

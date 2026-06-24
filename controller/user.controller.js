@@ -12,7 +12,7 @@ export const getAllUsers = async (req, res, next) => {
     const users = await User.find().skip(skip).limit(limit);
     const totalUsers = await User.countDocuments();
 
-    successResponse(res, 201, {
+    successResponse(res, 200, {
       users,
       pagination: {
         totalUsers,
@@ -30,11 +30,11 @@ export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return errorResponse(res, 400, "User Not found");
+      return errorResponse(res, 404, "User not found");
     }
     return successResponse(res, 200, user);
   } catch (error) {
-    return errorResponse(res, 400, "Error while fetching a single User");
+    return errorResponse(res, 500, "Error while fetching a single user");
   }
 };
 
@@ -58,33 +58,44 @@ export const addUser = async (req, res, next) => {
 };
 
 export const updateUser = async (req, res, next) => {
-  const data = userSchema.partial().safeParse(req.body);
+  try {
+    const data = userSchema.partial().safeParse(req.body);
 
-  if (!data.success) {
-    return errorResponse(res, 400, "The data to validate User is not correct");
+    if (!data.success) {
+      return errorResponse(
+        res,
+        400,
+        "The data to validate User is not correct",
+      );
+    }
+
+    if (Object.keys(data.data).length == 0) {
+      return errorResponse(res, 400, "No data is provided to update");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: data.data },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      return errorResponse(res, 404, "User not found");
+    }
+    return successResponse(res, 200, updatedUser);
+  } catch (error) {
+    if (error.code === 11000) {
+      return errorResponse(res, 409, "Email already exists");
+    }
+    return errorResponse(res, 500, "User failed to get updated");
   }
-
-  if (Object.keys(data.data).length == 0) {
-    return errorResponse(res, 400, "No data is provided to update");
-  }
-
-  const updatedUser = await User.findByIdAndUpdate(
-    req.params.id,
-    { $set: data.data },
-    { new: true },
-  );
-
-  if (!updatedUser) {
-    return errorResponse(res, 400, "User failed to get Updated ");
-  }
-  return successResponse(res, 200, updatedUser);
 };
 
 export const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return errorResponse(res, 400, "User does not exist");
+      return errorResponse(res, 404, "User does not exist");
     }
 
     await Post.deleteMany({ userId: req.params.id });
@@ -93,6 +104,6 @@ export const deleteUser = async (req, res, next) => {
 
     return res.status(204).send();
   } catch (error) {
-    return errorResponse(res, 400, "Could not delete User ");
+    return errorResponse(res, 500, "Could not delete user");
   }
 };
